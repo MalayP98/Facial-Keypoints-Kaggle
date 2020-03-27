@@ -1,9 +1,16 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
+from keras.models import Sequential
+from keras.layers import Convolution2D
+from keras.layers import MaxPool2D
+from keras.layers import Flatten
+from keras.layers import Dense
 
 
 def breakPixels(image):
+    # takes string input
     pixel = []
     image = image.split()
     for i in range(len(image)):
@@ -13,10 +20,12 @@ def breakPixels(image):
 
     return pixel
 
+
 def showImage(image):
     image = breakPixels(image)
     image = image.reshape(96, 96)
     plt.imshow(image, cmap=plt.cm.gray_r, interpolation="nearest")
+
 
 def getNegativeImage(image):
     image = breakPixels(image)
@@ -25,23 +34,26 @@ def getNegativeImage(image):
 
     return image
 
+
 def showNegImage(image):
     image = getNegativeImage(image)
     image = image.reshape(96, 96)
     plt.imshow(image, cmap=plt.cm.gray_r, interpolation="nearest")
 
+
 def display_keypoints(keypoints):
     i = 0
     x = []
     y = []
-    while(i < len(keypoints)):
+    while i < len(keypoints):
         x.append(keypoints[i])
-        y.append(keypoints[i+1])
-        i = i+2
+        y.append(keypoints[i + 1])
+        i = i + 2
 
     plt.scatter(x, y, s=10)
     plt.xlim(0, 96)
     plt.ylim(96, 0)
+
 
 def processed_image(image):
     image = getNegativeImage(image)
@@ -58,9 +70,38 @@ def processed_image(image):
     plt.imshow(image, cmap=plt.cm.gray_r, interpolation="nearest")
 
 
-data_frame_dataset = pd.read_csv("/home/malay/PycharmProjects/Facial-Keypoints-Kaggle/facial-keypoints-detection/training.csv")
-image_dataset = pd.read_csv("/home/malay/PycharmProjects/Facial-Keypoints-Kaggle/facial-keypoints-detection/training.csv").iloc[:, -1]
-keypoint_dataset = pd.read_csv("/home/malay/PycharmProjects/Facial-Keypoints-Kaggle/facial-keypoints-detection/training.csv").iloc[:, :30].values
+def string2image(image_dataset):
+    # takes string dataset of images(entire dataset)
+    new_image_dataset = []
+    for i in range(len(image_dataset)):
+        pixel = breakPixels(image_dataset[i])
+        new_image_dataset.append(list(pixel))
+
+    return np.array(new_image_dataset)
+
+
+def plot_n_images(nrow, ncol, image_dataset, keypoint_dataset, with_keypoints=True):
+    number_of_images = nrow*ncol
+    fig = plt.figure(figsize=(8,8))
+    images = np.random.randint(len(image_dataset), size=number_of_images)
+
+    for i in range(number_of_images):
+        pixel = getNegativeImage(image_dataset[images[i]])
+        pixel = pixel.reshape(96, 96)
+        fig.add_subplot(nrow, ncol,i+1)
+        plt.title("image {}".format(i+1))
+        plt.axis('off')
+        plt.imshow(pixel, cmap=plt.cm.gray_r)
+        if with_keypoints:
+            display_keypoints(keypoint_dataset[images[i]])
+
+
+dataset = pd.read_csv("/home/malay/PycharmProjects/Facial-Keypoints-Kaggle/facial-keypoints-detection/training.csv")
+dataset.isnull().sum()
+dataset = dataset.dropna(axis=0)
+
+image_dataset = dataset.iloc[:, -1].values
+keypoint_dataset = dataset.iloc[:, :30].values
 
 image_number = 2
 showImage(image_dataset[image_number])
@@ -68,9 +109,9 @@ showNegImage(image_dataset[image_number])
 processed_image(image_dataset[image_number])
 display_keypoints(keypoint_dataset[image_number])
 
-data_frame_dataset.isnull().sum()
+new_image_dataset = string2image(image_dataset)
+xTrain, xTest, yTrain, yTest = train_test_split(new_image_dataset, keypoint_dataset, test_size=0.2, random_state=0)
+xTrain = xTrain.reshape(len(xTrain), 96, 96, 1)
+xTest = xTest.reshape(len(xTest), 96, 96, 1)
 
-
-
-
-
+plot_n_images(4, 4, image_dataset, keypoint_dataset, with_keypoints=False)
