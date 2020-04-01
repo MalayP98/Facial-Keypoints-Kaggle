@@ -3,10 +3,11 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 from keras.models import Sequential
-from keras.layers import Convolution2D
+from keras.layers import Conv2D
 from keras.layers import MaxPool2D
 from keras.layers import Flatten
 from keras.layers import Dense
+from keras.optimizers import SGD
 
 
 def breakPixels(image):
@@ -95,6 +96,14 @@ def plot_n_images(nrow, ncol, image_dataset, keypoint_dataset, with_keypoints=Tr
         if with_keypoints:
             display_keypoints(keypoint_dataset[images[i]])
 
+def select_feature( image, feature=None):
+    pass
+
+def testPredicted(image_num, image, keypoint):
+    image = image.reshape(96, 96)
+    display_keypoints(yTest[image_num])
+    plt.imshow(image, cmap=plt.cm.gray_r)
+    display_keypoints(keypoint)
 
 dataset = pd.read_csv("/home/malay/PycharmProjects/Facial-Keypoints-Kaggle/facial-keypoints-detection/training.csv")
 dataset.isnull().sum()
@@ -115,3 +124,26 @@ xTrain = xTrain.reshape(len(xTrain), 96, 96, 1)
 xTest = xTest.reshape(len(xTest), 96, 96, 1)
 
 plot_n_images(4, 4, image_dataset, keypoint_dataset, with_keypoints=False)
+
+model = Sequential()
+model.add((Conv2D(32, kernel_size=3, activation='relu', input_shape=(96, 96, 1))))
+model.add((MaxPool2D(2,2)))
+
+model.add((Conv2D(64, kernel_size=2, activation='relu')))
+model.add((MaxPool2D(2,2)))
+
+model.add((Conv2D(128, kernel_size=2, activation='relu')))
+model.add((MaxPool2D(2,2)))
+
+model.add(Flatten())
+
+model.add(Dense(500,  activation='relu'))
+model.add(Dense(500, activation='relu'))
+model.add(Dense(30))
+
+model.compile(loss="mse", optimizer="rmsprop")
+
+model.fit(xTrain, yTrain, validation_data=(xTest, yTest), epochs=1000)
+pred = model.predict(xTest)
+
+testPredicted(5, xTest[5], pred[5])
