@@ -7,7 +7,7 @@ from keras.layers import Conv2D
 from keras.layers import MaxPool2D
 from keras.layers import Flatten
 from keras.layers import Dense
-from keras.optimizers import SGD
+from keras.preprocessing.image import ImageDataGenerator
 
 
 def breakPixels(image):
@@ -99,6 +99,9 @@ def plot_n_images(nrow, ncol, image_dataset, keypoint_dataset, with_keypoints=Tr
 def select_feature( image, feature=None):
     pass
 
+def fill_na(model):
+    pass
+
 def testPredicted(image_num, image, keypoint):
     image = image.reshape(96, 96)
     display_keypoints(yTest[image_num])
@@ -143,7 +146,18 @@ model.add(Dense(30))
 
 model.compile(loss="mse", optimizer="rmsprop")
 
-model.fit(xTrain, yTrain, validation_data=(xTest, yTest), epochs=1000)
+datagen = ImageDataGenerator(
+    featurewise_center=True,
+    featurewise_std_normalization=True,
+    rotation_range=20,
+    width_shift_range=0.2,
+    height_shift_range=0.2,
+    horizontal_flip=True)
+datagen.fit(xTrain)
+model.fit_generator(datagen.flow(xTrain, yTrain, batch_size=32),
+                    steps_per_epoch=len(xTrain) / 32, epochs=200)
+
 pred = model.predict(xTest)
 
 testPredicted(5, xTest[5], pred[5])
+
